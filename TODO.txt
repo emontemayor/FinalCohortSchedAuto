@@ -1,0 +1,33 @@
+NEXT MEETING: 5/2
+Tammy requested update following a similar format as below. 
+
+Since last meeting:
+	-Researched potential solutions
+	-Fixed worksheet selection bug
+	
+Current Objective: 
+	- increase universality of program / reduce necessity for rigid format
+	- retain complete integrity of previous schedules
+	
+	
+Potentially Sneaky Things to Work Around
+
+- Sneaky column B thinger on CISD [line 25 has hidden 3 in column B)
+- Sneaky characters mis placed characters [BAMCCBS cell C12]
+
+New solution for hidden files
+- Openpyxl does not support preserving the hidden rows when inserting new rows (Confirmed through email)
+To maintain integrity of the excel file:
+	- read existing data in target worksheet
+	- store it in memory 
+	- write new schedule at the top
+	- write stored data below the new schedule 
+
+	Potential Pitfalls
+	- Loss of integrity of hidden rows when pulled from memory
+
+PLAN B
+Tammy has access to a database with the course data
+provided in a more 'stripped down' fashion by an algo.
+If working around man-made schedules too challenging,
+consider following Tammy's plan B. 
