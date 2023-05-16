@@ -1,28 +1,38 @@
-NEXT MEETING: 5/2
-Tammy requested update following a similar format as below. 
+NEXT MEETING: 5/16
 
+
+5/9 Meeting
 Since last meeting:
-	-Researched potential solutions
-	-Fixed worksheet selection bug
+	-Implemented:
+		-Hidden rows integrity maintainer
+		-Merged cells integrity maintainer
 	
 Current Objective: 
-	- increase universality of program / reduce necessity for rigid format
-	- retain complete integrity of previous schedules
-	
+--------------------------------
+By Thursday:
+	- Iron out merger/hider details [data offset? ? ?]
+	- Double check sourcing schedules, permissions
+	- On schedule title: no use for start and end date
+--------------------------------
+	- Backup system
+	- Progress bar 
+	- look into increasing flexibility around human error
+	- standardize font and font size
+	- justify dates to the right
+	- normalize date formats ( mm/dd/yy )
+	- think of adding UI for choosing single file or folder
 	
 Potentially Sneaky Things to Work Around
-
 - Sneaky column B thinger on CISD [line 25 has hidden 3 in column B)
 - Sneaky characters mis placed characters [BAMCCBS cell C12]
 
-New solution for hidden files
+New solution for hidden files [EDIT: 5/9 IMPLEMENTED]
 - Openpyxl does not support preserving the hidden rows when inserting new rows (Confirmed through email)
 To maintain integrity of the excel file:
 	- read existing data in target worksheet
 	- store it in memory 
 	- write new schedule at the top
 	- write stored data below the new schedule 
-
 	Potential Pitfalls
 	- Loss of integrity of hidden rows when pulled from memory
 
@@ -31,3 +41,8 @@ Tammy has access to a database with the course data
 provided in a more 'stripped down' fashion by an algo.
 If working around man-made schedules too challenging,
 consider following Tammy's plan B. 
+
+NOTIFY Tammy
+BAMC 1123-N300 has wrong sections
+ASK
+How to format the title cells going forward? copy style from previous calendar?
