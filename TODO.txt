@@ -1,40 +1,41 @@
-NEXT MEETING: 5/16
+NEXT MEETING: 5/30
 
 
-5/9 Meeting
+5/23 Meeting
 Since last meeting:
 	-Implemented:
-		-Hidden rows integrity maintainer
-		-Merged cells integrity maintainer
-	
-Current Objective: 
---------------------------------
-By Thursday:
-	- Iron out merger/hider details [data offset? ? ?]
-	- Double check sourcing schedules, permissions
-	- On schedule title: no use for start and end date
---------------------------------
-	- Backup system
+		-Settings menu with
+			-Back up checkbox
+			-Folder mode checkbox
+			-Persistent settings
+		-Standardized font/style
+		-Justified dates to the right
+		-force mm/dd/yyyy formats
+		
+Current Objective:
+	- Folder mode + testing
 	- Progress bar 
-	- look into increasing flexibility around human error
-	- standardize font and font size
-	- justify dates to the right
-	- normalize date formats ( mm/dd/yy )
-	- think of adding UI for choosing single file or folder
+	- Increase flexibility around human error
 	
+--------------------------------
+By Thursday or Friday:
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------
+
 Potentially Sneaky Things to Work Around
 - Sneaky column B thinger on CISD [line 25 has hidden 3 in column B)
 - Sneaky characters mis placed characters [BAMCCBS cell C12]
-
-New solution for hidden files [EDIT: 5/9 IMPLEMENTED]
-- Openpyxl does not support preserving the hidden rows when inserting new rows (Confirmed through email)
-To maintain integrity of the excel file:
-	- read existing data in target worksheet
-	- store it in memory 
-	- write new schedule at the top
-	- write stored data below the new schedule 
-	Potential Pitfalls
-	- Loss of integrity of hidden rows when pulled from memory
 
 PLAN B
 Tammy has access to a database with the course data
@@ -44,5 +45,3 @@ consider following Tammy's plan B.
 
 NOTIFY Tammy
 BAMC 1123-N300 has wrong sections
-ASK
-How to format the title cells going forward? copy style from previous calendar?

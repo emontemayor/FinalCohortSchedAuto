@@ -3,7 +3,12 @@ from openpyxl.utils.exceptions import InvalidFileException
 from openpyxl.utils import column_index_from_string
 from openpyxl.styles import NamedStyle
 from openpyxl.cell.cell import MergedCell
+from tkinter import Toplevel, PhotoImage
 from tkinter import filedialog
+from datetime import datetime
+from openpyxl.styles.numbers import FORMAT_DATE_DDMMYY
+from PIL import Image, ImageTk
+import configparser
 import shutil
 import tkinter as tk
 import os
@@ -15,6 +20,9 @@ class App:
         
         self.target_file_path = ""
         self.target_file_name = ""
+        self.folder_mode_var = tk.BooleanVar()  # Variable for "Folder Mode" checkbox
+        self.create_backup_var = tk.BooleanVar()
+
 #/--------------------------------GUI------------------------------/
         #setting title
         root.title("Tammy's Cohort Sched Tool")
@@ -48,15 +56,80 @@ class App:
         submit_button = tk.Button(root, text="Submit", command=self.submit, bg="#8AC6D1", fg="white", width=20, height=2)
         submit_button.place(x=150,y=115)
         
-        #Backup Checkbox
-        self.create_backup_var = tk.BooleanVar()
-        create_backup_checkbox = tk.Checkbutton(root, text="Create Backup", variable=self.create_backup_var)
-        create_backup_checkbox.pack()
-        create_backup_checkbox.place(x=30,y=120)
+        # Load the original image
+        original_image = Image.open("settings_cog.gif")
+
+        # Define the desired size
+        desired_size = (30, 30)  # Replace width and height with your desired values
+
+        # Resize the image
+        resized_image = original_image.resize(desired_size, Image.ANTIALIAS)
+
+        # Convert the resized image to PhotoImage
+        settings_icon = ImageTk.PhotoImage(resized_image)
+
+        # Create the button with the resized image
+        settings_button = tk.Button(root, image=settings_icon, command=self.open_settings, bg="#8AC6D1", relief='raised')
+        settings_button.place(x=30, y=120)
+        settings_button.image = settings_icon  # keep a reference of the image
 
         #Status notification
         self.status_label = tk.Label(root, text="")
         self.status_label.place(x=330, y=125)
+        
+        # Load the checkbox state
+        self.load_checkbox_state()
+
+
+    def save_checkbox_state(self):
+        config = configparser.ConfigParser()
+        config.read('settings.ini')  # Read the existing configuration file
+
+        if 'Settings' not in config:
+            config['Settings'] = {}
+
+        config['Settings']['CreateBackup'] = str(self.create_backup_var.get())  # Save the checkbox state
+        config['Settings']['FolderMode'] = str(self.folder_mode_var.get()) 
+
+        with open('settings.ini', 'w') as configfile:
+            config.write(configfile)  # Write the updated configuration to the file
+
+    def load_checkbox_state(self):
+        config = configparser.ConfigParser()
+        config.read('settings.ini')  # Read the configuration file
+
+        if 'Settings' in config and 'CreateBackup' in config['Settings']:
+            self.create_backup_var.set(config.getboolean('Settings', 'CreateBackup'))  # Load the checkbox state
+        if 'Settings' in config and 'FolderMode' in config['Settings']:
+            self.folder_mode_var.set(config.getboolean('Settings', 'FolderMode'))  # Load the checkbox state
+
+    def open_settings(self):
+        settings_window = Toplevel(root)  # Use the 'root' directly
+        settings_window.title("Settings")
+        settings_window.geometry("150x150")
+        settings_window.resizable(width=False, height=False)
+
+        # Backup Checkbox
+        create_backup_checkbox = tk.Checkbutton(settings_window, text="Create Backup", variable=self.create_backup_var)
+        create_backup_checkbox.pack()
+        create_backup_checkbox.place(x=30, y=30)
+
+        # Folder Mode Checkbox
+        folder_mode_checkbox = tk.Checkbutton(settings_window, text="Folder Mode", variable=self.folder_mode_var)
+        folder_mode_checkbox.pack()
+        folder_mode_checkbox.place(x=30, y=60)
+
+        self.load_checkbox_state()
+
+        def apply_settings():
+            self.save_checkbox_state()
+            settings_window.destroy()
+
+        # Apply Button
+        apply_button = tk.Button(settings_window, text="Apply", command=apply_settings)
+        apply_button.pack()
+        apply_button.place(x=30, y=90)
+        # You can add more elements to the settings window here
 
     def browse_source(self):
         source_file = filedialog.askopenfilename(title = "Select a File", filetypes = (("Excel files", "*.xlsx"),("Excel files", "*.xls")))
@@ -119,6 +192,7 @@ class App:
         # Split name of wb2 to isolate name of program
         targetWS = self.source_file_name.split()
         ws = wb1[targetWS[0]]
+        base_style = wb1[targetWS[0]]['A3'] #obtain the base style of the cells
 
         #Find number of rows to be copied and inserted. compare val of a and b cells, 
         #increase b by one (one row down) and repeat until section is over. a starts at 3 to make up for header
@@ -258,17 +332,56 @@ class App:
                 break
 
             #Write down course name and number
-            ws.cell(row, col).value = str(currentCell.offset(0, -1).value).split()[0] + " " + str(currentCell.offset(0, -1).value).split()[1].replace(':','')
+            ws.cell(row, col).value = str(currentCell.offset(0, -1).value).split()[0] + " " + str(currentCell.offset(0, -1).value).split()[1].replace(':', '')
+            cell = ws.cell(row, col)
+            cell.font = base_style.font
+            cell.border = base_style.border
+            cell.fill = base_style.fill
+            cell.number_format = base_style.number_format
+            cell.protection = base_style.protection
+            cell.alignment = base_style.alignment
+
 
             #Write down term
             ws.cell(row, col+1).value = term
+            cell = ws.cell(row, col+1)
+            cell.font = base_style.font
+            cell.border = base_style.border
+            cell.fill = base_style.fill
+            cell.number_format = base_style.number_format
+            cell.protection = base_style.protection
+            cell.alignment = base_style.alignment
 
             #write down weeks
+            # Write down weeks
             ws.cell(row, col+3).value = str(currentCell.offset(0, 2).value)
+            cell = ws.cell(row, col+3)
+            cell.font = base_style.font
+            cell.border = base_style.border
+            cell.fill = base_style.fill
+            cell.number_format = base_style.number_format
+            cell.protection = base_style.protection
+            cell.alignment = base_style.alignment
 
-            #Write down dates
-            ws.cell(row, col+5).value = str(currentCell.offset(0, 1).value).split()[0]
-            ws.cell(row, col+6).value = str(currentCell.offset(0, 1).value).split()[2]         
+            # Write down dates Please note, datetime.strptime() function will throw an error if the date string is not in the expected format. You may need to handle this exception, especially if there's a chance that the date strings could be in a different format.
+            # Write down dates
+            ws.cell(row, col+5).value = datetime.strptime(str(currentCell.offset(0, 1).value).split()[0], "%d/%m/%y")
+            cell = ws.cell(row, col+5)
+            cell.font = base_style.font
+            cell.border = base_style.border
+            cell.fill = base_style.fill
+            cell.number_format = FORMAT_DATE_DDMMYY  # force date format
+            cell.protection = base_style.protection
+            cell.alignment = base_style.alignment
+
+            ws.cell(row, col+6).value = datetime.strptime(str(currentCell.offset(0, 1).value).split()[2], "%d/%m/%y")
+            cell = ws.cell(row, col+6)
+            cell.font = base_style.font
+            cell.border = base_style.border
+            cell.fill = base_style.fill
+            cell.number_format = FORMAT_DATE_DDMMYY  # force date format
+            cell.protection = base_style.protection
+            cell.alignment = base_style.alignment
 
             #Move to next row for next iteration
             row += 1
