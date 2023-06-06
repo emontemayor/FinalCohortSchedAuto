@@ -3,6 +3,8 @@ from openpyxl.utils.exceptions import InvalidFileException
 from openpyxl.utils import column_index_from_string
 from openpyxl.styles import NamedStyle
 from openpyxl.cell.cell import MergedCell
+from openpyxl.styles import Font, Border, Fill, Alignment, Protection
+from datetime import datetime, timedelta
 from tkinter import Toplevel, PhotoImage
 from tkinter import filedialog
 from datetime import datetime
@@ -63,7 +65,7 @@ class App:
         desired_size = (30, 30)  # Replace width and height with your desired values
 
         # Resize the image
-        resized_image = original_image.resize(desired_size, Image.ANTIALIAS)
+        resized_image = original_image.resize(desired_size, Image.LANCZOS)
 
         # Convert the resized image to PhotoImage
         settings_icon = ImageTk.PhotoImage(resized_image)
@@ -192,7 +194,13 @@ class App:
         # Split name of wb2 to isolate name of program
         targetWS = self.source_file_name.split()
         ws = wb1[targetWS[0]]
-        base_style = wb1[targetWS[0]]['A3'] #obtain the base style of the cells
+       
+        base_cell= wb1[targetWS[0]]['A3'] #obtain the base style of the cells
+        # Create a new style from the base cell's style
+        base_font = Font(name=base_cell.font.name, bold=base_cell.font.bold, italic=base_cell.font.italic)
+        base_border = Border(left=base_cell.border.left, right=base_cell.border.right, top=base_cell.border.top, bottom=base_cell.border.bottom)
+        base_alignment = Alignment(horizontal=base_cell.alignment.horizontal, vertical=base_cell.alignment.vertical)
+        base_protection = Protection(locked=base_cell.protection.locked, hidden=base_cell.protection.hidden)
 
         #Find number of rows to be copied and inserted. compare val of a and b cells, 
         #increase b by one (one row down) and repeat until section is over. a starts at 3 to make up for header
@@ -334,54 +342,50 @@ class App:
             #Write down course name and number
             ws.cell(row, col).value = str(currentCell.offset(0, -1).value).split()[0] + " " + str(currentCell.offset(0, -1).value).split()[1].replace(':', '')
             cell = ws.cell(row, col)
-            cell.font = base_style.font
-            cell.border = base_style.border
-            cell.fill = base_style.fill
-            cell.number_format = base_style.number_format
-            cell.protection = base_style.protection
-            cell.alignment = base_style.alignment
+            cell = ws.cell(row=row, column=col)
+            cell.font = base_font
+            cell.border = base_border
+            cell.alignment = base_alignment
+            cell.protection = base_protection
+            cell.number_format = base_cell.number_format
 
 
             #Write down term
             ws.cell(row, col+1).value = term
             cell = ws.cell(row, col+1)
-            cell.font = base_style.font
-            cell.border = base_style.border
-            cell.fill = base_style.fill
-            cell.number_format = base_style.number_format
-            cell.protection = base_style.protection
-            cell.alignment = base_style.alignment
+            cell.font = base_font
+            cell.border = base_border
+            cell.alignment = base_alignment
+            cell.protection = base_protection
+            cell.number_format = base_cell.number_format
 
             #write down weeks
             # Write down weeks
             ws.cell(row, col+3).value = str(currentCell.offset(0, 2).value)
             cell = ws.cell(row, col+3)
-            cell.font = base_style.font
-            cell.border = base_style.border
-            cell.fill = base_style.fill
-            cell.number_format = base_style.number_format
-            cell.protection = base_style.protection
-            cell.alignment = base_style.alignment
+            cell.font = base_font
+            cell.border = base_border
+            cell.alignment = base_alignment
+            cell.protection = base_protection
+            cell.number_format = base_cell.number_format
 
             # Write down dates Please note, datetime.strptime() function will throw an error if the date string is not in the expected format. You may need to handle this exception, especially if there's a chance that the date strings could be in a different format.
             # Write down dates
-            ws.cell(row, col+5).value = datetime.strptime(str(currentCell.offset(0, 1).value).split()[0], "%d/%m/%y")
+            ws.cell(row, col+5).value = str(currentCell.offset(0, 1).value).split()[0]
             cell = ws.cell(row, col+5)
-            cell.font = base_style.font
-            cell.border = base_style.border
-            cell.fill = base_style.fill
-            cell.number_format = FORMAT_DATE_DDMMYY  # force date format
-            cell.protection = base_style.protection
-            cell.alignment = base_style.alignment
-
-            ws.cell(row, col+6).value = datetime.strptime(str(currentCell.offset(0, 1).value).split()[2], "%d/%m/%y")
+            cell.font = base_font
+            cell.border = base_border
+            cell.alignment = base_alignment
+            cell.protection = base_protection
+            cell.number_format = base_cell.number_format
+           
+            ws.cell(row, col+6).value = str(currentCell.offset(0, 1).value).split()[2]
             cell = ws.cell(row, col+6)
-            cell.font = base_style.font
-            cell.border = base_style.border
-            cell.fill = base_style.fill
-            cell.number_format = FORMAT_DATE_DDMMYY  # force date format
-            cell.protection = base_style.protection
-            cell.alignment = base_style.alignment
+            cell.font = base_font
+            cell.border = base_border
+            cell.alignment = base_alignment
+            cell.protection = base_protection
+            cell.number_format = base_cell.number_format
 
             #Move to next row for next iteration
             row += 1
