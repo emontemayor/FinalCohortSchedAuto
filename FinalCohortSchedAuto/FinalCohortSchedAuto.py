@@ -4,6 +4,7 @@ from openpyxl.utils import column_index_from_string
 from openpyxl.styles import NamedStyle
 from openpyxl.cell.cell import MergedCell
 from openpyxl.styles import Font, Border, Fill, Alignment, Protection
+import traceback
 from datetime import datetime, timedelta
 from tkinter import Toplevel, PhotoImage
 from tkinter import filedialog
@@ -13,18 +14,20 @@ from PIL import Image, ImageTk
 import configparser
 import shutil
 import tkinter as tk
+from tkinter import ttk
 import os
 
 class App:
     def __init__(self, root):
+        self.root=root
         self.source_file_path = ""
         self.source_file_name = ""
-        
         self.target_file_path = ""
         self.target_file_name = ""
         self.folder_mode_var = tk.BooleanVar()  # Variable for "Folder Mode" checkbox
         self.create_backup_var = tk.BooleanVar()
-
+        self.progbarMultiplier = 0 #Multiplier for the progress bar
+        self.progLength = 200
 #/--------------------------------GUI------------------------------/
         #setting title
         root.title("Tammy's Cohort Sched Tool")
@@ -32,32 +35,39 @@ class App:
         root.geometry("450x180")
         root.resizable(width=False, height=False)
 
+        #Define mode flag [single or folder]
+        self.modeFlag = 0 #0 - singleSubmit 1 - folderSubmit
+
         # Source file label
-        source_label = tk.Label(root, text="Calendar:")
-        source_label.place(x=30,y=30)
+        self.source_label = tk.Label(root, text="Calendar:")
+        self.source_label.place(x=30,y=30)
 
         self.source_file_label = tk.Label(root, text='No File Selected')
         self.source_file_label.place(x=150,y=30)
 
         # Source file browse button
-        source_browse_button = tk.Button(root, text="Browse", command=self.browse_source, bg="#8AC6D1", fg="white", width=10, height=1, relief='raised')
-        source_browse_button.place(x=330,y=30)
+        self.source_browse_button = tk.Button(root, text="Browse", command=self.browse_source, bg="#8AC6D1", fg="white", width=10, height=1, relief='raised')
+        self.source_browse_button.place(x=330,y=30)
         
         # Target file label
-        target_label = tk.Label(root, text="Cohort Schedule:")
-        target_label.place(x=30,y=70)
+        self.target_label = tk.Label(root, text="Cohort Schedule:")
+        self.target_label.place(x=30,y=70)
 
         self.target_file_label = tk.Label(root, text='No File Selected')
         self.target_file_label.place(x=150,y=70)
 
         # Target file browse button
-        target_browse_button = tk.Button(root, text="Browse", command=self.browse_target, bg="#8AC6D1", fg="white", width=10, height=1, relief='raised')
-        target_browse_button.place(x=330,y=70)
+        self.target_browse_button = tk.Button(root, text="Browse", command=self.browse_target, bg="#8AC6D1", fg="white", width=10, height=1, relief='raised')
+        self.target_browse_button.place(x=330,y=70)
 
-        # Submit button
-        submit_button = tk.Button(root, text="Submit", command=self.submit, bg="#8AC6D1", fg="white", width=20, height=2)
-        submit_button.place(x=150,y=115)
-        
+        # Submit button. Initially blue for single mode.
+        self.submit_button = tk.Button(root, text="File Submit", command=self.singleSubmit, bg="#8AC6D1", fg="white", width=20, height=2)
+        self.submit_button.place(x=150,y=115)
+        # Create the second button (red button for Folder mode)
+        self.second_button = tk.Button(root, text="Folder Submit", command=self.folderSubmit, bg="#FFB6C1", fg="white", width=20, height=2)
+        # Initially hide the red button
+        self.second_button.place_forget()
+
         # Load the original image
         original_image = Image.open("settings_cog.gif")
 
@@ -81,7 +91,40 @@ class App:
         
         # Load the checkbox state
         self.load_checkbox_state()
+    
+    def create_progressbar(self, multiplier):
+        if (self.modeFlag):
+            self.progbarMultiplier = multiplier
+        # Create the progress bar
+        self.progress = ttk.Progressbar(self.root, length=200, mode='determinate')
+        self.progress.pack()
 
+    def updateProgress(self):
+        if (self.modeFlag):
+            self.progress['value'] = self.progress['value'] + (.1/self.progbarMultiplier)
+        else:
+            self.progress['value'] += .1 
+        
+
+        root.update_idletasks()
+
+    def switch_button(self):
+        if self.folder_mode_var.get():
+            # Hide the blue button and show the red button
+            self.submit_button.place_forget()
+            self.second_button.place(x=150, y=115)
+        
+            # Change the text of the source_label and the color of the browse button
+            self.source_label.config(text="Folder:")
+            self.source_browse_button.config(bg="#FFB6C1")
+        else:
+            # Hide the red button and show the blue button
+            self.second_button.place_forget()
+            self.submit_button.place(x=150, y=115)
+
+            # Change the text of the source_label and the color of the browse button back to original
+            self.source_label.config(text="Calendar:")
+            self.source_browse_button.config(bg="#8AC6D1")
 
     def save_checkbox_state(self):
         config = configparser.ConfigParser()
@@ -104,8 +147,23 @@ class App:
             self.create_backup_var.set(config.getboolean('Settings', 'CreateBackup'))  # Load the checkbox state
         if 'Settings' in config and 'FolderMode' in config['Settings']:
             self.folder_mode_var.set(config.getboolean('Settings', 'FolderMode'))  # Load the checkbox state
+    
+    def load_checkbox_state(self):
+        config = configparser.ConfigParser()
+        config.read('settings.ini')  # Read the configuration file
+
+        if 'Settings' in config and 'CreateBackup' in config['Settings']:
+            self.create_backup_var.set(config.getboolean('Settings', 'CreateBackup'))  # Load the checkbox state
+        if 'Settings' in config and 'FolderMode' in config['Settings']:
+            self.folder_mode_var.set(config.getboolean('Settings', 'FolderMode'))  # Load the checkbox state
+    
+        self.switch_button()  # Switch the buttons according to the checkbox state
+
 
     def open_settings(self):
+        self.load_checkbox_state()
+        self.switch_button()  # Switch the buttons according to the checkbox state
+
         settings_window = Toplevel(root)  # Use the 'root' directly
         settings_window.title("Settings")
         settings_window.geometry("150x150")
@@ -117,7 +175,7 @@ class App:
         create_backup_checkbox.place(x=30, y=30)
 
         # Folder Mode Checkbox
-        folder_mode_checkbox = tk.Checkbutton(settings_window, text="Folder Mode", variable=self.folder_mode_var)
+        folder_mode_checkbox = tk.Checkbutton(settings_window, text="Folder Mode", variable=self.folder_mode_var, command=self.switch_button)
         folder_mode_checkbox.pack()
         folder_mode_checkbox.place(x=30, y=60)
 
@@ -134,10 +192,17 @@ class App:
         # You can add more elements to the settings window here
 
     def browse_source(self):
-        source_file = filedialog.askopenfilename(title = "Select a File", filetypes = (("Excel files", "*.xlsx"),("Excel files", "*.xls")))
-        self.source_file_path = os.path.realpath(source_file)
-        self.source_file_label.config(text=os.path.basename(source_file))
-        self.source_file_name = os.path.basename(source_file)
+        if self.folder_mode_var.get():
+            # Folder mode is selected, let user choose a directory
+            source_folder = filedialog.askdirectory(title = "Select a Folder")
+            self.source_file_path = os.path.realpath(source_folder)
+            self.source_file_label.config(text=os.path.basename(source_folder))
+        else:
+            # Folder mode is not selected, let user choose a file
+            source_file = filedialog.askopenfilename(title = "Select a File", filetypes = (("Excel files", "*.xlsx"),("Excel files", "*.xls")))
+            self.source_file_path = os.path.realpath(source_file)
+            self.source_file_label.config(text=os.path.basename(source_file))
+            self.source_file_name = os.path.basename(source_file)
         self.status_label.config(text="")
 
     def browse_target(self):
@@ -146,10 +211,44 @@ class App:
         self.target_file_label.config(text=os.path.basename(target_file))
         self.target_file_name = os.path.basename(target_file)
         self.status_label.config(text="")
+
 #/--------------------------------Submit Algorithm------------------------------/
     #Submit button function. Will attempt to load CST.xlsx file first, then impor the data
     #from the calendar into the CST.xlsx file.
-    def submit(self):
+    def folderSubmit(self):
+        multiplier = 0
+        self.modeFlag = 1 #Set the mode to folderSubmit
+        try:
+            # Save the original directory path
+            source_folder_path = self.source_file_path
+
+            # Get list of all files in the selected directory
+            files_in_directory = os.listdir(self.source_file_path)
+
+            # Filter the list to include only .xlsx and .xls files
+            excel_files = [file for file in files_in_directory if file.endswith((".xlsx", ".xls"))]
+            
+            for file in excel_files:
+                multiplier = multiplier + 1
+            self.create_progressbar(multiplier)
+
+            # Loop over each file and call singleSubmit on each file
+            for file in excel_files:
+                self.source_file_path = os.path.join(source_folder_path, file)  # use source_folder_path
+                self.source_file_name = os.path.basename(file)
+                self.singleSubmit()  # call singleSubmit on each file
+
+            self.source_file_path = source_folder_path  # reset source_file_path
+            self.progress['value'] += 200 
+
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+
+    def singleSubmit(self):
+        if (self.modeFlag == 0): #if not in folder mode
+            self.create_progressbar(1) #create progress bar with dimension 1
+
         try:
             # here you have access to the source and target files
             wb1 = load_workbook(self.target_file_path)
@@ -223,6 +322,7 @@ class App:
         merged_cells_info = []
         hidden_rows = []
         for row in ws.iter_rows(min_row=2):
+            self.updateProgress() #######################################################################################
             row_data = {}
             for cell in row:
                 if isinstance(cell, MergedCell):  # Skip merged cells
@@ -256,6 +356,7 @@ class App:
         merged_cells_info_copy = merged_cells_info.copy()
         merged_cells_info_copy = list(set(merged_cells_info_copy))
         while merged_cells_info_copy:
+            self.updateProgress() #######################################################################################
             merged_cell_range, cell_value = merged_cells_info_copy[0]
             print("Inside loop, merged_cell_range:", merged_cell_range)
             ws.merge_cells(start_row=merged_cell_range.bounds[1] + counter, start_column=merged_cell_range.bounds[0],
@@ -301,6 +402,7 @@ class App:
         #Find cells with a 'credit' value, meaning rows with course listing on them. Obtain global 'term' for current term as wel
         def iterate():
             for row in wsC.iter_rows():
+                self.updateProgress() #######################################################################################
                 for cell in row:
                     if cell in cellChecker:  # make sure not to repeat the same cell
                         continue
@@ -332,6 +434,7 @@ class App:
         #Counter is subtracted 1 to account for op header rows 1 and 2 
         while(rowCounter != counter-1):
             #Find cells with a 'credit' value, meaning rows with course listing on them. Obtain global 'term' for current term as well.
+            self.updateProgress() #######################################################################################
             currentCell = iterate()
             
             if currentCell is None:
