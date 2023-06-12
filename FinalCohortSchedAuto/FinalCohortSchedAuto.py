@@ -24,6 +24,7 @@ class App:
         self.source_file_name = ""
         self.target_file_path = ""
         self.target_file_name = ""
+        self.error_list = []
         self.folder_mode_var = tk.BooleanVar()  # Variable for "Folder Mode" checkbox
         self.create_backup_var = tk.BooleanVar()
         self.progbarMultiplier = 0 #Multiplier for the progress bar
@@ -211,6 +212,45 @@ class App:
         self.target_file_label.config(text=os.path.basename(target_file))
         self.target_file_name = os.path.basename(target_file)
         self.status_label.config(text="")
+   
+    def show_error_window(self, error_report):
+        # Create a new window
+        error_window = tk.Toplevel()
+        error_window.geometry("500x300")  # you can adjust the window size
+        error_window.resizable(width=False, height=False)
+
+        # Add a title to the window
+        error_window.title("Error Report")
+
+        # Create a frame to add padding
+        frame = tk.Frame(error_window, bg="lightgray", padx=20, pady=20)
+        frame.pack(fill='both', expand=True)
+
+        # Create a scrollable text widget
+        text_widget = tk.Text(frame, wrap='word', height=10, width=50, bg="lightgray", fg="red", font=("Arial", 10))  # you can adjust height and width
+        text_widget.pack(side='left', fill='both', expand=True)
+
+        # Add a scrollbar widget
+        scrollbar = tk.Scrollbar(frame)
+        scrollbar.pack(side='right', fill='y')
+
+        # Configure the scrollbar to scroll the text widget
+        text_widget.configure(yscrollcommand=scrollbar.set)
+        scrollbar.configure(command=text_widget.yview)
+
+        # Insert the error report into the text widget
+        text_widget.insert('1.0', error_report)
+
+        # Disable editing
+        text_widget.configure(state='disabled')
+
+        # Create an OK button that will destroy the window when clicked
+        ok_button = tk.Button(frame, text="OK", command=error_window.destroy, bg="lightgray", fg="black", relief='raised', font=("Arial", 12), padx=20, pady=10)
+        ok_button.pack(pady=10)
+
+        # This line is needed to handle window events
+        error_window.mainloop()
+
 
 #/--------------------------------Submit Algorithm------------------------------/
     #Submit button function. Will attempt to load CST.xlsx file first, then impor the data
@@ -236,11 +276,22 @@ class App:
             for file in excel_files:
                 self.source_file_path = os.path.join(source_folder_path, file)  # use source_folder_path
                 self.source_file_name = os.path.basename(file)
-                self.singleSubmit()  # call singleSubmit on each file
+                try:
+                    self.singleSubmit()  # call singleSubmit on each file
+                except Exception as e:
+                        print(e)
+                        self.status_label.config(text="Error Added")
+                        self.error_list.append(self.source_file_name)
+                        print(self.source_file_name)
 
             self.source_file_path = source_folder_path  # reset source_file_path
             self.progress['value'] += 200 
-
+             # once everything else is done, display the error report
+            if self.error_list:
+                error_report = "Manual Addition Required:\n" + "\n".join(self.error_list)
+                print(error_report)
+                # display `error_report` in a window 
+            self.show_error_window(error_report)
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -249,7 +300,7 @@ class App:
         if (self.modeFlag == 0): #if not in folder mode
             self.create_progressbar(1) #create progress bar with dimension 1
 
-        try:
+
             # here you have access to the source and target files
             wb1 = load_workbook(self.target_file_path)
             wb2 = load_workbook(self.source_file_path)
@@ -258,15 +309,6 @@ class App:
             #ungreened out, it was working with this greened out. this code is needed to find errors.
             wb1.save(self.target_file_path)
             self.status_label.config(text="Loading..")
-        except UnboundLocalError as e:
-            print(e)
-            self.status_label.config(text="Update files to .xlsx")
-        except FileNotFoundError as e:
-            print(e)
-            self.status_label.config(text="File not found")
-        except Exception as e: 
-            print(e)
-            self.status_label.config(text="Error: Close Excel Files")
 
         # here you have access to the source and target files
         source_file_name = self.source_file_label['text']
@@ -279,12 +321,17 @@ class App:
         wb1 = load_workbook(self.target_file_path)
         wb2 = load_workbook(self.source_file_path)
 
-         # Create backup if the user has selected that option
-        if self.create_backup_var.get():
-            backup_folder = tk.filedialog.askdirectory()
-            if backup_folder:  # Make sure the user selected a directory
-                backup_path = os.path.join(backup_folder, os.path.basename(target_file_path))
-                shutil.copy2(target_file_path, backup_path)
+        backupFlag = 1
+        while True:
+            if backupFlag == 1:
+                break
+                # Create backup if the user has selected that option
+            if self.create_backup_var.get():
+                backup_folder = tk.filedialog.askdirectory()
+                if backup_folder:  # Make sure the user selected a directory
+                    backup_path = os.path.join(backup_folder, os.path.basename(target_file_path))
+                    shutil.copy2(target_file_path, backup_path)
+            backupFlag == 0
 
 
         # Obtain primary worksheet from source
@@ -360,7 +407,7 @@ class App:
             merged_cell_range, cell_value = merged_cells_info_copy[0]
             print("Inside loop, merged_cell_range:", merged_cell_range)
             ws.merge_cells(start_row=merged_cell_range.bounds[1] + counter, start_column=merged_cell_range.bounds[0],
-                           end_row=merged_cell_range.bounds[3] + counter, end_column=merged_cell_range.bounds[2])
+                            end_row=merged_cell_range.bounds[3] + counter, end_column=merged_cell_range.bounds[2])
             top_left_cell = ws.cell(row=merged_cell_range.bounds[1] + counter, column=merged_cell_range.bounds[0])
             top_left_cell.value = cell_value
             merged_cells_info_copy.pop(0)
@@ -493,13 +540,15 @@ class App:
             #Move to next row for next iteration
             row += 1
             rowCounter += 1
-            
-        #show complete flag and save.
+          
+                #show complete flag and save.
         try:
             wb1.save(self.target_file_path)
+            self.status_label.config(text="           ")
             self.status_label.config(text="Complete!")
         except: 
             self.status_label.config(text="Error: Close Excel Files")
+
 
 root = tk.Tk()
 app = App(root)
