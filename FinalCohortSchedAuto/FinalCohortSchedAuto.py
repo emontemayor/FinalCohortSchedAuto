@@ -29,6 +29,7 @@ class App:
         self.create_backup_var = tk.BooleanVar()
         self.progbarMultiplier = 0 #Multiplier for the progress bar
         self.progLength = 200
+        self.backupFlag = 1
 #/--------------------------------GUI------------------------------/
         #setting title
         root.title("Tammy's Cohort Sched Tool")
@@ -300,7 +301,6 @@ class App:
         if (self.modeFlag == 0): #if not in folder mode
             self.create_progressbar(1) #create progress bar with dimension 1
 
-
             # here you have access to the source and target files
             wb1 = load_workbook(self.target_file_path)
             wb2 = load_workbook(self.source_file_path)
@@ -320,10 +320,9 @@ class App:
         # Prepare Cohort Sched excel workbook and sheet to be added
         wb1 = load_workbook(self.target_file_path)
         wb2 = load_workbook(self.source_file_path)
-
-        backupFlag = 1
+       
         while True:
-            if backupFlag == 1:
+            if self.backupFlag == 0:
                 break
                 # Create backup if the user has selected that option
             if self.create_backup_var.get():
@@ -331,7 +330,7 @@ class App:
                 if backup_folder:  # Make sure the user selected a directory
                     backup_path = os.path.join(backup_folder, os.path.basename(target_file_path))
                     shutil.copy2(target_file_path, backup_path)
-            backupFlag == 0
+            self.backupFlag = 0
 
 
         # Obtain primary worksheet from source
