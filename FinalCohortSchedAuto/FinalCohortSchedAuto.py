@@ -25,6 +25,7 @@ class App:
         self.target_file_path = ""
         self.target_file_name = ""
         self.error_list = []
+        self.complete_list = []
         self.folder_mode_var = tk.BooleanVar()  # Variable for "Folder Mode" checkbox
         self.create_backup_var = tk.BooleanVar()
         self.progbarMultiplier = 0 #Multiplier for the progress bar
@@ -161,7 +162,6 @@ class App:
     
         self.switch_button()  # Switch the buttons according to the checkbox state
 
-
     def open_settings(self):
         self.load_checkbox_state()
         self.switch_button()  # Switch the buttons according to the checkbox state
@@ -284,6 +284,8 @@ class App:
                         self.status_label.config(text="Error Added")
                         self.error_list.append(self.source_file_name)
                         print(self.source_file_name)
+                else:
+                        self.complete_list.append(self.source_file_name)
 
             self.source_file_path = source_folder_path  # reset source_file_path
             self.progress['value'] += 200 
@@ -291,8 +293,13 @@ class App:
             if self.error_list:
                 error_report = "Manual Addition Required:\n" + "\n".join(self.error_list)
                 print(error_report)
-                # display `error_report` in a window 
+            if self.complete_list:
+                complete_report = "Completed:\n" + "\n".join(self.complete_list)
+                print(complete_report)
+                # display `error_report` in a window python setup.py py2exe
+
             self.show_error_window(error_report)
+            self.show_error_window(complete_report)
         except Exception as e:
             print(e)
             traceback.print_exc()
@@ -367,7 +374,7 @@ class App:
         existing_rows = []
         merged_cells_info = []
         hidden_rows = []
-        for row in ws.iter_rows(min_row=2):
+        for row in ws.iter_rows(min_row=2, max_col=12):  # Define the range of columns here
             self.updateProgress() #######################################################################################
             row_data = {}
             for cell in row:
@@ -392,15 +399,14 @@ class App:
                     cell = ws.cell(row=row_index, column=column_index_from_string(col)) 
                     cell.value = value
             if "hidden" in row_data and row_data["hidden"]:
-                ws.row_dimensions[row_index].hidden = True  
-
+                ws.row_dimensions[row_index].hidden = True
 
 
         # Reapply merged cell ranges and restore their data
         print("Before loop, merged_cells_info:", len(merged_cells_info))
 
         merged_cells_info_copy = merged_cells_info.copy()
-        merged_cells_info_copy = list(set(merged_cells_info_copy))
+        merged_cells_info_copy = list(set(merged_cells_info_copy)) 
         while merged_cells_info_copy:
             self.updateProgress() #######################################################################################
             merged_cell_range, cell_value = merged_cells_info_copy[0]
@@ -445,7 +451,6 @@ class App:
                 if ".xlsx" in cell.value:
                     cell.value = cell.value.replace(".xlsx", "") 
 
-        #Find cells with a 'credit' value, meaning rows with course listing on them. Obtain global 'term' for current term as wel
         def iterate():
             for row in wsC.iter_rows():
                 self.updateProgress() #######################################################################################
@@ -461,10 +466,15 @@ class App:
                             term = a[2]
                         # Find a course row based on a number existing on column B (the credits cell)
                         if cell.column_letter == 'B' and str(cell.value).isnumeric():
-                            cellChecker.append(cell)
-                            print(f"Returning cell {cell.coordinate}: {cell.value}")  # Add this line for debugging
-                            return cell
+                            # Check if adjacent cells are not None before adding cell to the list
+                            adjacent_cell1 = cell.offset(0, -1).value
+                            adjacent_cell2 = cell.offset(0, 1).value
+                            if adjacent_cell1 is not None and adjacent_cell2 is not None:
+                                cellChecker.append(cell)
+                                print(f"Returning cell {cell.coordinate}: {cell.value}")  # Add this line for debugging
+                                return cell
             return None
+
 
 
     
