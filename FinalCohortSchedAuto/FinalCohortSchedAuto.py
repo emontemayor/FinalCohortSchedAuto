@@ -311,9 +311,7 @@ class App:
             # here you have access to the source and target files
             wb1 = load_workbook(self.target_file_path)
             wb2 = load_workbook(self.source_file_path)
-            
-            #greened out bottom lines 4/18 11.58am
-            #ungreened out, it was working with this greened out. this code is needed to find errors.
+
             wb1.save(self.target_file_path)
             self.status_label.config(text="Loading..")
 
@@ -357,8 +355,6 @@ class App:
         #Find number of rows to be copied and inserted. compare val of a and b cells, 
         #increase b by one (one row down) and repeat until section is over. a starts at 3 to make up for header
         #b starts at i (4) right under 3, I is incremented each comparison.
-        #The section name is used to find the number of courses.
-        #!!!!!!!!!!!!!!!!!!!!!UPDATE:5/8 THE ABOVE DESCRIPTION IS NO LONGER TRUE, HAS CHANGED BC OF LATEST AI ADDITION
         i = 4
         a = ws.cell(row=3, column=1)
         b = ws.cell(row=i, column=1)
@@ -408,7 +404,7 @@ class App:
         merged_cells_info_copy = merged_cells_info.copy()
         merged_cells_info_copy = list(set(merged_cells_info_copy)) 
         while merged_cells_info_copy:
-            self.updateProgress() #######################################################################################
+            self.updateProgress() 
             merged_cell_range, cell_value = merged_cells_info_copy[0]
             print("Inside loop, merged_cell_range:", merged_cell_range)
             ws.merge_cells(start_row=merged_cell_range.bounds[1] + counter, start_column=merged_cell_range.bounds[0],
@@ -453,7 +449,7 @@ class App:
 
         def iterate():
             for row in wsC.iter_rows():
-                self.updateProgress() #######################################################################################
+                self.updateProgress() 
                 for cell in row:
                     if cell in cellChecker:  # make sure not to repeat the same cell
                         continue
@@ -490,7 +486,7 @@ class App:
         #Counter is subtracted 1 to account for op header rows 1 and 2 
         while(rowCounter != counter-1):
             #Find cells with a 'credit' value, meaning rows with course listing on them. Obtain global 'term' for current term as well.
-            self.updateProgress() #######################################################################################
+            self.updateProgress() 
             currentCell = iterate()
             
             if currentCell is None:
